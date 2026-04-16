@@ -1,0 +1,596 @@
+
+ <!DOCTYPE HTML>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  
+    <title>动态追踪工具——火焰图 | 7byte</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
+    
+    <meta name="author" content="7byte">
+    
+
+    
+    <meta name="description" content="火焰图就像是给一个软件系统拍的 X 光照片，可以很自然地把时间和空间两个维度上的信息融合在一张图上，以非常直观的形式展现出来，从而反映系统在性能方面的很多定量的统计规律。      ——动态追踪技术漫谈  下面介绍下火焰图相关工具的安装和使用。  首先需要安装内核开发包和调试包。查看当前系统的内核版本：  12$ uname -r3.10.0-327.28.2.el7.x86_64  然后进入">
+<meta property="og:type" content="article">
+<meta property="og:title" content="动态追踪工具——火焰图">
+<meta property="og:url" content="https://7byte.github.io/2017/01/02/trytouse-FlameGraph/index.html">
+<meta property="og:site_name" content="7byte">
+<meta property="og:description" content="火焰图就像是给一个软件系统拍的 X 光照片，可以很自然地把时间和空间两个维度上的信息融合在一张图上，以非常直观的形式展现出来，从而反映系统在性能方面的很多定量的统计规律。      ——动态追踪技术漫谈  下面介绍下火焰图相关工具的安装和使用。  首先需要安装内核开发包和调试包。查看当前系统的内核版本：  12$ uname -r3.10.0-327.28.2.el7.x86_64  然后进入">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://7byte.github.io/images/08-30-13-36-12.jpg">
+<meta property="og:image" content="https://7byte.github.io/images/08-30-13-36-13.jpg">
+<meta property="article:published_time" content="2017-01-02T07:10:27.000Z">
+<meta property="article:modified_time" content="2019-07-15T09:43:41.669Z">
+<meta property="article:author" content="7byte">
+<meta property="article:tag" content="nginx">
+<meta property="article:tag" content="openresty">
+<meta property="article:tag" content="动态追踪">
+<meta property="article:tag" content="性能测试">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://7byte.github.io/images/08-30-13-36-12.jpg">
+
+    
+    <link rel="alternative" href="/atom.xml" title="7byte" type="application/atom+xml">
+    
+    
+    <link rel="icon" href="/img/favicon.ico">
+    
+    
+    <link rel="apple-touch-icon" href="/img/jacman.jpg">
+    <link rel="apple-touch-icon-precomposed" href="/img/jacman.jpg">
+    
+    
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 8.0.0"></head>
+
+  <body>
+    <header>
+      
+<div>
+		
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="7byte">7byte</a></h1>
+				<h2 class="blog-motto">骐骥一跃，不能十步；驽马十驾，功在不舍</h2>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜单">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					<ul>
+					 
+						<li><a href="/">主页</a></li>
+					
+						<li><a href="/archives">存档</a></li>
+					
+						<li><a href="/categories">分类</a></li>
+					
+						<li><a href="/tags">标签</a></li>
+					
+						<li><a href="/about">About</a></li>
+					
+					<li>
+ 					
+					<form class="search" action="/search/index.html" method="get" accept-charset="utf-8">
+						<label>Search</label>
+						<input type="search" id="search" autocomplete="off" name="q" maxlength="20" placeholder="搜索" />
+					</form>
+					
+					</li>
+				</ul>
+			</nav>			
+</div>
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+  
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2017/01/02/trytouse-FlameGraph/" title="动态追踪工具——火焰图" itemprop="url">动态追踪工具——火焰图</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="/about" title="7byte" target="_blank" itemprop="author">7byte</a>
+		
+  <p class="article-time">
+    <time datetime="2017-01-02T07:10:27.000Z" itemprop="datePublished"> 发表于 2017-01-02</time>
+    
+  </p>
+</header>
+	<div class="article-content">
+		
+		<blockquote>
+<p>火焰图就像是给一个软件系统拍的 X 光照片，可以很自然地把时间和空间两个维度上的信息融合在一张图上，以非常直观的形式展现出来，从而反映系统在性能方面的很多定量的统计规律。      ——<a target="_blank" rel="noopener" href="https://openresty.org/posts/dynamic-tracing/">动态追踪技术漫谈</a></p>
+</blockquote>
+<p>下面介绍下火焰图相关工具的安装和使用。</p>
+<ul>
+<li>首先需要安装内核开发包和调试包。查看当前系统的内核版本：</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">uname</span> -r</span></span><br><span class="line">3.10.0-327.28.2.el7.x86_64</span><br></pre></td></tr></table></figure>
+<ul>
+<li>然后进入 <a target="_blank" rel="noopener" href="http://debuginfo.centos.org/">http://debuginfo.centos.org/</a> ，可以看到有 4&#x2F; 5&#x2F; 6&#x2F; 7&#x2F; 这样的目录，这些目录分别对应了centos系统的大版本。找到并下载自己的系统内核版本对应的包：</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">wget <span class="string">&quot;http://debuginfo.centos.org/7/x86_64/kernel-debuginfo-(<span class="variable">$version</span>).rpm&quot;</span></span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">wget <span class="string">&quot;http://debuginfo.centos.org/7/x86_64/kernel-debuginfo-common-(<span class="variable">$version</span>).rpm&quot;</span></span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>安装上面的开发包和调试包，并安装内核探测工具 systemtap</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> rpm -ivh kernel-debuginfo-common-(<span class="variable">$version</span>).rpm</span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> rpm -ivh kernel-debuginfo-(<span class="variable">$version</span>).rpm</span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> yum install kernel-devel-(<span class="variable">$version</span>)</span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> yum install systemtap</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>下载火焰图绘制相关工具</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">git <span class="built_in">clone</span> https://github.com/openresty/nginx-systemtap-toolkit.git</span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">git <span class="built_in">clone</span> https://github.com/brendangregg/FlameGraph.git</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>然后测试下有没有安装成功<br>通过ps命令查看当前 nginx worker 进程的PID，如果有多个worker选择其中一个即可，下面是我测试时查询到的结果 PID&#x3D;14489</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">ps -ef | grep nginx</span></span><br><span class="line">root      1580     1  0 11:36 ?        00:00:00 nginx: master process /usr/local/openresty/nginx/sbin/nginx -c /home/7byte/openresty-test/conf/nginx.conf</span><br><span class="line">nobody   14489  1580  0 13:46 ?        00:00:00 nginx: worker process</span><br></pre></td></tr></table></figure>
+<pre><code>这里我选用了工具包里的 sample-bt 来验证，它抓取的是C级别的运行状态，参数 -p 表示要抓取的进程id，-t是探测的时间，单位是秒，-u表示抓取用户空间，对应的-k表示内核空间，探测结果输出到 a.bt
+</code></pre>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">mkdir</span> svg</span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> nginx-systemtap-toolkit/./sample-bt -p 14489 -t 20 -u &gt; svg/a.bt</span></span><br><span class="line">WARNING: Tracing 14489 (/usr/local/openresty/nginx/sbin/nginx) in user-space only...</span><br><span class="line">WARNING: Time&#x27;s up. Quitting now...(it may take a while)</span><br></pre></td></tr></table></figure>
+<pre><code>得到 a.bt 后再用 FlameGraph 提供的两个脚本处理输出结果
+</code></pre>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">FlameGraph/stackcollapse-stap.pl svg/a.bt &gt; svg/a.cbt</span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">FlameGraph/flamegraph.pl svg/a.cbt &gt; svg/a.svg</span></span><br></pre></td></tr></table></figure>
+<pre><code>最后生成的 a.svg 就是火焰图，用浏览器打开即可，效果如下图：
+</code></pre>
+<p><img src="/images/08-30-13-36-12.jpg"><br>    每个框代表一个栈里的一个函数；<br>Y轴代表栈深度（栈桢数）。最顶端的框显示正在运行的函数，这之下的框都是调用者。在下面的函数是上面函数的父函数；<br>X轴代表采样总量。从左到右并不代表时间变化，从左到右也不具备顺序性；<br>框的宽度代表占用CPU总时间。宽的框代表的函数可能比窄的运行慢，或者被调用了更多次数。框的颜色深浅也没有任何意义；<br>如果是多线程同时采样，采样总数会超过总时间。</p>
+<ul>
+<li>然后再测试下抓取lua级别的火焰图，这里需要使用另外一个工具 ngx-sample-lua-bt ， –luajit20 表示nginx使用luajit2.0，如果使用的是标准lua则使用 –lua51</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ sudo nginx-systemtap-toolkit/./ngx-sample-lua-bt -p 2834 --luajit20 -t 20 &gt; svg/a.bt</span><br><span class="line">WARNING: missing unwind/symbol data for module &#x27;kernel&#x27;</span><br><span class="line">WARNING: Tracing 2836 (/usr/local/openresty/nginx/sbin/nginx) for LuaJIT 2.0...</span><br><span class="line">WARNING: Time&#x27;s up. Quitting now...</span><br></pre></td></tr></table></figure>
+<pre><code>对输出文件 a.bt 的后续处理与上文基本相同。另外可以预处理一下输出文件，增强可读性：
+</code></pre>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ nginx-systemtap-toolkit/./fix-lua-bt svg/a.bt &gt; svg/tmp.bt</span><br><span class="line">$ FlameGraph/stackcollapse-stap.pl svg/tmp.bt &gt; svg/a.cbt</span><br><span class="line">$ FlameGraph/flamegraph.pl svg/a.cbt &gt; svg/a.svg</span><br></pre></td></tr></table></figure>
+<pre><code>输出效果如下图：
+</code></pre>
+<p><img src="/images/08-30-13-36-13.jpg"></p>
+<pre><code>遇到的问题：
+</code></pre>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> nginx-systemtap-toolkit/./ngx-sample-lua-bt -p 2039 --luajit20 -t 5 &gt; svg/a.bt</span></span><br><span class="line">WARNING: cannot find module /usr/local/openresty/luajit/lib/libluajit-5.1.so.2.1.0 debuginfo: No DWARF information found [man warning::debuginfo]</span><br><span class="line">WARNING: Bad $context variable being substituted with literal 0: identifier &#x27;$L&#x27; at &lt;input&gt;:17:30</span><br><span class="line"> source:         lua_states[my_pid] = $L</span><br><span class="line">                                      ^</span><br><span class="line">semantic error: type definition &#x27;TValue&#x27; not found in &#x27;/usr/local/openresty/luajit/lib/libluajit-5.1.so.2.1.0&#x27;: operator &#x27;@cast&#x27; at :62:12</span><br><span class="line">        source:     return @cast(tvalue, &quot;TValue&quot;, &quot;/usr/local/openresty/luajit/lib/libluajit-5.1.so.2.1.0&quot;)-&gt;fr-&gt;tp-&gt;ftsz</span><br><span class="line">                           ^</span><br><span class="line"></span><br><span class="line">Pass 2: analysis failed.  [man error::pass2]</span><br><span class="line">Number of similar warning messages suppressed: 100.</span><br><span class="line">Rerun with -v to see them.</span><br></pre></td></tr></table></figure>
+<pre><code>在使用 ngx-sample-lua-bt 探测lua级别的火焰图时遇到了失败的情况，从错误信息来看是找不到 DWARF 调试信息。查找官网资料，貌似在很早以前 openresty 自带的 LuaJIT 2.0 默认就会启用 DWARF 调试信息，那我用的最新版怎么就是没有调试信息呢？折腾了好久，最后我到 luajit 官网下载了当前 openresty 版本对应的 luajit 源码，然后编译
+</code></pre>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">make CCDEBUG=-g -B -j8</span></span><br></pre></td></tr></table></figure>
+<pre><code>备份然后替换 /usr/local/openresty/luajit 目录下的两个文件，重启 openresty之后问题解决。
+</code></pre>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">cd</span> /usr/local/openresty/luajit/bin/</span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> <span class="built_in">cp</span> luajit-2.1.0-beta2 luajit-2.1.0-beta2_20160829</span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> <span class="built_in">cp</span> ~/LuaJIT-2.1.0-beta2/src/luajit/luajit luajit-2.1.0-beta2</span></span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">cd</span> /usr/local/openresty/luajit/lib/</span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> <span class="built_in">cp</span> libluajit-5.1.so.2.1.0 libluajit-5.1.so.2.1.0_20160829</span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> <span class="built_in">cp</span> ~/LuaJIT-2.1.0-beta2/src/libluajit.so libluajit-5.1.so.2.1.0</span></span><br></pre></td></tr></table></figure>
+<pre><code>从上面的分析可以看出，使用火焰图可以精确地定位 nginx + lua 潜在的性能问题，对CPU占用率低、吐吞量低的情况也可以使用火焰图的方式排查程序中是否有阻塞调用导致整个架构的吞吐量低下。
+</code></pre>
+<p>根据官网的说明，火焰图本身对系统性能的影响较小，每秒请求数会下降11%：</p>
+<blockquote>
+<p>The overhead exposed on the target process is usually small. For example, the throughput (req&#x2F;sec) limit of an nginx worker process doing simplest “hello world” requests drops by only 11% (only when this tool is running), as measured by ab -k -c2 -n100000 when using Linux kernel 3.6.10 and systemtap 2.5. The impact on full-fledged production processes is usually smaller than even that, for instance, only 6% drop in the throughput limit is observed in a production-level Lua CDN application.</p>
+</blockquote>
+  
+	</div>
+		<footer class="article-footer clearfix">
+<div class="article-catetags">
+
+<div class="article-categories">
+  <span></span>
+  <a class="article-category-link" href="/categories/openresty/">openresty</a>
+</div>
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/nginx/">nginx</a><a href="/tags/openresty/">openresty</a><a href="/tags/性能测试/">性能测试</a><a href="/tags/动态追踪/">动态追踪</a>
+  </div>
+
+</div>
+
+
+
+	<div class="article-share" id="share">
+	
+	  <div data-url="https://7byte.github.io/2017/01/02/trytouse-FlameGraph/" data-title="动态追踪工具——火焰图 | 7byte" data-tsina="" class="share clearfix">
+	  </div>
+	
+	</div>
+
+
+</footer>
+
+   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+ <div class="prev" >
+ <a href="/2017/01/12/trytouse-wrk/" title="wrk压力测试">
+  <strong>上一篇：</strong><br/>
+  <span>
+  wrk压力测试</span>
+</a>
+</div>
+
+
+<div class="next">
+<a href="/2016/08/20/trytouse-openresty/"  title="初尝openresty">
+ <strong>下一篇：</strong><br/> 
+ <span>初尝openresty
+</span>
+</a>
+</div>
+
+</nav>
+
+	
+
+<section id="comments" class="comment">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a target="_blank" rel="noopener" href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="显示侧边栏"></a></div>
+
+  <div id="toc" class="toc-aside">
+  <strong class="toc-title">文章目录</strong>
+ 
+ 
+ 
+  </div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="隐藏侧边栏"></a></div>
+<aside class="clearfix">
+
+  
+<div class="categorieslist">
+	<p class="asidetitle">分类</p>
+		<ul>
+		
+		  
+			<li><a href="/categories/golang/" title="golang">golang<sup>3</sup></a></li>
+		  
+		
+		  
+			<li><a href="/categories/openresty/" title="openresty">openresty<sup>5</sup></a></li>
+		  
+		
+		  
+			<li><a href="/categories/性能测试/" title="性能测试">性能测试<sup>1</sup></a></li>
+		  
+		
+		  
+			<li><a href="/categories/myBlog/" title="搭建个人博客">搭建个人博客<sup>1</sup></a></li>
+		  
+		
+		  
+			<li><a href="/categories/算法/" title="算法">算法<sup>3</sup></a></li>
+		  
+		
+		</ul>
+</div>
+
+
+  
+<div class="tagslist">
+	<p class="asidetitle">标签</p>
+		<ul class="clearfix">
+		
+			
+				<li><a href="/tags/nginx/" title="nginx">nginx<sup>5</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/openresty/" title="openresty">openresty<sup>4</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/golang/" title="golang">golang<sup>3</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/性能测试/" title="性能测试">性能测试<sup>2</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/树/" title="树">树<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/搜索/" title="搜索">搜索<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/反向代理/" title="反向代理">反向代理<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/动态追踪/" title="动态追踪">动态追踪<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/github/" title="github">github<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/hexo/" title="hexo">hexo<sup>1</sup></a></li>
+			
+		
+		</ul>
+</div>
+
+
+  <div class="linkslist">
+  <p class="asidetitle">友情链接</p>
+    <ul>
+        
+          <li>
+            
+            	<a href="https://github.com/7byte" target="_blank" title="GitHub of 7byte">GitHub of 7byte</a>
+            
+          </li>
+        
+          <li>
+            
+            	<a href="http://zzhangzhiqi.lofter.com" target="_blank" title="程序猿也玩摄影">程序猿也玩摄影</a>
+            
+          </li>
+        
+    </ul>
+</div>
+
+</aside>
+</div>
+    </div>
+    <footer><div id="footer" >
+	
+	
+	<div class="social-font" class="clearfix">
+		
+		
+		<a href="https://github.com/7byte" target="_blank" class="icon-github" title="github"></a>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		<a href="mailto:zzhangzhiqi@gmail.com" target="_blank" class="icon-email" title="Email Me"></a>
+		
+	</div>
+			
+		
+				<div class="cc-license">
+          <a href="http://creativecommons.org/licenses/by-nc-sa/4.0" class="cc-opacity" target="_blank">
+            <img src="/img/cc-by-nc-sa.svg" alt="Creative Commons" />
+          </a>
+        </div>
+    
+
+		<p class="copyright">
+		Powered by <a href="http://hexo.io" target="_blank" title="hexo">hexo</a> and Theme by <a href="https://github.com/wuchong/jacman" target="_blank" title="Jacman">Jacman</a> © 2026 
+		
+		<a href="/about" target="_blank" title="7byte">7byte</a>
+		
+		
+		</p>
+</div>
+</footer>
+    <script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/jquery.qrcode-0.12.0.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');      
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+  // 
+  
+    c.click();
+  
+  $(window).resize(function(){
+    getSize(); 
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else{
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+      
+      $('#toc.toc-aside').css('display', 'none');
+        
+    }
+  });
+});
+</script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  c.click(function(){
+    ta.css('display', 'block').addClass('fadeIn');
+  });
+  o.click(function(){
+    ta.css('display', 'none');
+  });
+  c.click();
+  $(window).scroll(function(){
+    ta.css("top",Math.max(140,320-$(this).scrollTop()));
+  });
+});
+</script>
+
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var $this = $('.share'),
+      url = $this.attr('data-url'),
+      encodedUrl = encodeURIComponent(url),
+      title = $this.attr('data-title'),
+      tsina = $this.attr('data-tsina'),
+      description = $this.attr('description');
+  var html = [
+  '<div class="hoverqrcode clearfix"></div>',
+  '<a class="overlay" id="qrcode"></a>',
+  '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="article-share-facebook" target="_blank" title="Facebook"></a>',
+  '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="article-share-twitter" target="_blank" title="Twitter"></a>',
+  '<a href="#qrcode" class="article-share-qrcode" title="微信"></a>',
+  '<a href="http://widget.renren.com/dialog/share?resourceUrl=' + encodedUrl + '&srcUrl=' + encodedUrl + '&title=' + title +'" class="article-share-renren" target="_blank" title="人人"></a>',
+  '<a href="http://service.weibo.com/share/share.php?title='+title+'&url='+encodedUrl +'&ralateUid='+ tsina +'&searchPic=true&style=number' +'" class="article-share-weibo" target="_blank" title="微博"></a>',
+  '<span title="Share to"></span>'
+  ].join('');
+  $this.append(html);
+
+  $('.hoverqrcode').hide();
+
+  var myWidth = 0;
+  function updatehoverqrcode(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+    var qrsize = myWidth > 1024 ? 200:100;
+    var options = {render: 'image', size: qrsize, fill: '#2ca6cb', text: url, radius: 0.5, quiet: 1};
+    var p = $('.article-share-qrcode').position();
+    $('.hoverqrcode').empty().css('width', qrsize).css('height', qrsize)
+                          .css('left', p.left-qrsize/2+20).css('top', p.top-qrsize-10)
+                          .qrcode(options);
+  };
+  $(window).resize(function(){
+    $('.hoverqrcode').hide();
+  });
+  $('.article-share-qrcode').click(function(){
+    updatehoverqrcode();
+    $('.hoverqrcode').toggle();
+  });
+  $('.article-share-qrcode').hover(function(){}, function(){
+      $('.hoverqrcode').hide();
+  });
+});   
+</script>
+
+
+
+
+<script type="text/javascript">
+
+var disqus_shortname = '7bytegithubio';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.article-content').each(function(i){
+    $(this).find('img').each(function(){
+      if ($(this).parent().hasClass('fancybox')) return;
+      var alt = this.alt;
+      if (alt) $(this).after('<span class="caption">' + alt + '</span>');
+      $(this).wrap('<a href="' + this.src + '" title="' + alt + '" class="fancybox"></a>');
+    });
+    $(this).find('.fancybox').each(function(){
+      $(this).attr('rel', 'article' + i);
+    });
+  });
+  if($.fancybox){
+    $('.fancybox').fancybox();
+  }
+}); 
+</script>
+
+
+
+<!-- Analytics Begin -->
+
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-87803879-1', '7byte.github.io');  
+ga('send', 'pageview');
+</script>
+
+
+
+
+
+<!-- Analytics End -->
+
+<!-- Totop Begin -->
+
+	<div id="totop">
+	<a title="返回顶部"><img src="/img/scrollup.png"/></a>
+	</div>
+	<script src="/js/totop.js"></script>
+
+<!-- Totop End -->
+
+<!-- MathJax Begin -->
+<!-- mathjax config similar to math.stackexchange -->
+
+
+<!-- MathJax End -->
+
+<!-- Tiny_search Begin -->
+
+<!-- Tiny_search End -->
+
+  </body>
+</html>

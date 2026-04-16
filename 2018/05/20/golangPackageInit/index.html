@@ -1,0 +1,567 @@
+
+ <!DOCTYPE HTML>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  
+    <title>golang包初始化 | 7byte</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
+    
+    <meta name="author" content="7byte">
+    
+
+    
+    <meta name="description" content="相比于C&#x2F;C++等语言，Golang提供了一个非常重要的特性：包。包可以提供类似其它编程语言中的库或者模块的功能，这在Java和Python等语言中已经很常见，但是golang的包自有其特点，比如禁止循环引用、通过首字母大小写区分可见性而不是使用public和private这样的关键字。 另外还有一个被大量使用的特性：init函数机制。  每个包的go文件都能包含任意数量的init函数；">
+<meta property="og:type" content="article">
+<meta property="og:title" content="golang包初始化">
+<meta property="og:url" content="https://7byte.github.io/2018/05/20/golangPackageInit/index.html">
+<meta property="og:site_name" content="7byte">
+<meta property="og:description" content="相比于C&#x2F;C++等语言，Golang提供了一个非常重要的特性：包。包可以提供类似其它编程语言中的库或者模块的功能，这在Java和Python等语言中已经很常见，但是golang的包自有其特点，比如禁止循环引用、通过首字母大小写区分可见性而不是使用public和private这样的关键字。 另外还有一个被大量使用的特性：init函数机制。  每个包的go文件都能包含任意数量的init函数；">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-05-20T09:16:27.000Z">
+<meta property="article:modified_time" content="2019-07-15T09:43:41.668Z">
+<meta property="article:author" content="7byte">
+<meta property="article:tag" content="golang">
+<meta name="twitter:card" content="summary">
+
+    
+    <link rel="alternative" href="/atom.xml" title="7byte" type="application/atom+xml">
+    
+    
+    <link rel="icon" href="/img/favicon.ico">
+    
+    
+    <link rel="apple-touch-icon" href="/img/jacman.jpg">
+    <link rel="apple-touch-icon-precomposed" href="/img/jacman.jpg">
+    
+    
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 8.0.0"></head>
+
+  <body>
+    <header>
+      
+<div>
+		
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="7byte">7byte</a></h1>
+				<h2 class="blog-motto">骐骥一跃，不能十步；驽马十驾，功在不舍</h2>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜单">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					<ul>
+					 
+						<li><a href="/">主页</a></li>
+					
+						<li><a href="/archives">存档</a></li>
+					
+						<li><a href="/categories">分类</a></li>
+					
+						<li><a href="/tags">标签</a></li>
+					
+						<li><a href="/about">About</a></li>
+					
+					<li>
+ 					
+					<form class="search" action="/search/index.html" method="get" accept-charset="utf-8">
+						<label>Search</label>
+						<input type="search" id="search" autocomplete="off" name="q" maxlength="20" placeholder="搜索" />
+					</form>
+					
+					</li>
+				</ul>
+			</nav>			
+</div>
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+  
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2018/05/20/golangPackageInit/" title="golang包初始化" itemprop="url">golang包初始化</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="/about" title="7byte" target="_blank" itemprop="author">7byte</a>
+		
+  <p class="article-time">
+    <time datetime="2018-05-20T09:16:27.000Z" itemprop="datePublished"> 发表于 2018-05-20</time>
+    
+  </p>
+</header>
+	<div class="article-content">
+		
+		<p>相比于C&#x2F;C++等语言，Golang提供了一个非常重要的特性：包。包可以提供类似其它编程语言中的库或者模块的功能，这在Java和Python等语言中已经很常见，但是golang的包自有其特点，比如禁止循环引用、通过首字母大小写区分可见性而不是使用<code>public</code>和<code>private</code>这样的关键字。</p>
+<p>另外还有一个被大量使用的特性：init函数机制。</p>
+<ul>
+<li>每个包的go文件都能包含任意数量的init函数；</li>
+<li>init函数不能被用户调用或引用；</li>
+<li>多个init函数在程序启动时按照声明的顺序（执行main函数之前）自动调用。</li>
+</ul>
+<div align=center>![golang初始化顺序](/images/golang_init.png)</div>
+
+<p>（图片来自beego官方文档：<a target="_blank" rel="noopener" href="https://beego.me/docs/quickstart/router.md">https://beego.me/docs/quickstart/router.md</a> ）</p>
+<h3 id="包内的初始化顺序"><a href="#包内的初始化顺序" class="headerlink" title="包内的初始化顺序"></a>包内的初始化顺序</h3><ol>
+<li><code>const</code>常量首先被初始化。</li>
+<li>接着是包内的全局变量，初始化的顺序为变量的声明的顺序。但是当变量之间存在依赖关系时，优先初始化被依赖的变量。</li>
+<li>最后执行init函数。</li>
+</ol>
+<p>当包内有多个go源文件时，<code>go tool</code>按照文件名排序后依次送入编译器初始化。</p>
+<h3 id="依赖包的初始化"><a href="#依赖包的初始化" class="headerlink" title="依赖包的初始化"></a>依赖包的初始化</h3><p>在初始化一个包之前，必须完全初始化它所依赖的包。例如上图中的pkg1引入了pkg2，那么在初始化pkg1之前必须先初始化pkg2，而pkg2引入了pkg3，所以在初始化pkg2之前需要先初始化pkg3，pkg3没有引入任何包，所以直接执行包内初始化。由上图也可以发现，main总是最后一个被初始化的包。</p>
+<p>另外还有一个很重要的特性：每个包只会初始化一次。例如，即使<code>fmt</code>被多个包引入，也只会在第一次时被初始化。</p>
+<p>用下面的测试代码来验证一下以上特性。</p>
+<p><code>testInit/pkg2/pkg2.go</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> pkg2</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> <span class="string">&quot;fmt&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> (</span><br><span class="line">    X = <span class="number">10</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">init</span><span class="params">()</span></span> &#123;</span><br><span class="line">    X++</span><br><span class="line">    fmt.Printf(<span class="string">&quot;x init to %d in pkg2\n&quot;</span>, X)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>pkg2声明了一个可导出的变量<code>X</code>，初始值是10。init函数将<code>X</code>的值加<code>1</code>，并打印出<code>X</code>当前的值。</p>
+<p><code>testInit/pkg1/pkg1.go</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> pkg1</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">    <span class="string">&quot;testInit/pkg2&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">init</span><span class="params">()</span></span> &#123;</span><br><span class="line">    pkg2.X += <span class="number">2</span></span><br><span class="line">    fmt.Printf(<span class="string">&quot;x init to %d in pkg1\n&quot;</span>, pkg2.X)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">PrintX</span><span class="params">()</span></span> &#123;</span><br><span class="line">    fmt.Printf(<span class="string">&quot;x = %d in pkg1\n&quot;</span>, pkg2.X)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>pkg1引入了pkg2，并且在inti函数中将<code>X</code>的值加2，然后打印出<code>X</code>当前的值。</p>
+<p><code>testInit/main.go</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">    <span class="string">&quot;testInit/pkg1&quot;</span></span><br><span class="line">    <span class="string">&quot;testInit/pkg2&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">init</span><span class="params">()</span></span> &#123;</span><br><span class="line">    pkg2.X += <span class="number">3</span></span><br><span class="line">    fmt.Printf(<span class="string">&quot;x init to %d in main\n&quot;</span>, pkg2.X)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    fmt.Printf(<span class="string">&quot;x = %d in main\n&quot;</span>, pkg2.X)</span><br><span class="line">    pkg1.PrintX()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>main同时引入了pkg1和pkg2，并且在inti函数中将<code>X</code>的值加3，然后打印出<code>X</code>当前的值。</p>
+<p>输出：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[ `go run main.go` | done: 541.4397ms ]</span><br><span class="line">  x init to 11 in pkg2</span><br><span class="line">  x init to 13 in pkg1</span><br><span class="line">  x init to 16 in main</span><br><span class="line">  x = 16 in main</span><br><span class="line">  x = 16 in pkg1</span><br></pre></td></tr></table></figure>
+
+<p>不考虑<code>fmt</code>包，以上代码中有两条引用关系<code>main-&gt;pkg1-&gt;pkg2</code>和<code>main-&gt;pkg2</code>，但是从输出结果可以看到，pkg2只被初始化了一次，符合我们的预期。</p>
+  
+	</div>
+		<footer class="article-footer clearfix">
+<div class="article-catetags">
+
+<div class="article-categories">
+  <span></span>
+  <a class="article-category-link" href="/categories/golang/">golang</a>
+</div>
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/golang/">golang</a>
+  </div>
+
+</div>
+
+
+
+	<div class="article-share" id="share">
+	
+	  <div data-url="https://7byte.github.io/2018/05/20/golangPackageInit/" data-title="golang包初始化 | 7byte" data-tsina="" class="share clearfix">
+	  </div>
+	
+	</div>
+
+
+</footer>
+
+   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+ <div class="prev" >
+ <a href="/2019/04/16/introduce2skynet/" title="轻量级在线游戏服务器框架skynet">
+  <strong>上一篇：</strong><br/>
+  <span>
+  轻量级在线游戏服务器框架skynet</span>
+</a>
+</div>
+
+
+<div class="next">
+<a href="/2018/04/16/binary-search-tree/"  title="二叉查找树（BST）">
+ <strong>下一篇：</strong><br/> 
+ <span>二叉查找树（BST）
+</span>
+</a>
+</div>
+
+</nav>
+
+	
+
+<section id="comments" class="comment">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a target="_blank" rel="noopener" href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="显示侧边栏"></a></div>
+
+  <div id="toc" class="toc-aside">
+  <strong class="toc-title">文章目录</strong>
+ 
+ <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8C%85%E5%86%85%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96%E9%A1%BA%E5%BA%8F"><span class="toc-number">1.</span> <span class="toc-text">包内的初始化顺序</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BE%9D%E8%B5%96%E5%8C%85%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="toc-number">2.</span> <span class="toc-text">依赖包的初始化</span></a></li></ol>
+ 
+  </div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="隐藏侧边栏"></a></div>
+<aside class="clearfix">
+
+  
+<div class="categorieslist">
+	<p class="asidetitle">分类</p>
+		<ul>
+		
+		  
+			<li><a href="/categories/golang/" title="golang">golang<sup>3</sup></a></li>
+		  
+		
+		  
+			<li><a href="/categories/openresty/" title="openresty">openresty<sup>5</sup></a></li>
+		  
+		
+		  
+			<li><a href="/categories/性能测试/" title="性能测试">性能测试<sup>1</sup></a></li>
+		  
+		
+		  
+			<li><a href="/categories/myBlog/" title="搭建个人博客">搭建个人博客<sup>1</sup></a></li>
+		  
+		
+		  
+			<li><a href="/categories/算法/" title="算法">算法<sup>3</sup></a></li>
+		  
+		
+		</ul>
+</div>
+
+
+  
+<div class="tagslist">
+	<p class="asidetitle">标签</p>
+		<ul class="clearfix">
+		
+			
+				<li><a href="/tags/nginx/" title="nginx">nginx<sup>5</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/openresty/" title="openresty">openresty<sup>4</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/golang/" title="golang">golang<sup>3</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/性能测试/" title="性能测试">性能测试<sup>2</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/树/" title="树">树<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/搜索/" title="搜索">搜索<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/反向代理/" title="反向代理">反向代理<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/动态追踪/" title="动态追踪">动态追踪<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/github/" title="github">github<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/hexo/" title="hexo">hexo<sup>1</sup></a></li>
+			
+		
+		</ul>
+</div>
+
+
+  <div class="linkslist">
+  <p class="asidetitle">友情链接</p>
+    <ul>
+        
+          <li>
+            
+            	<a href="https://github.com/7byte" target="_blank" title="GitHub of 7byte">GitHub of 7byte</a>
+            
+          </li>
+        
+          <li>
+            
+            	<a href="http://zzhangzhiqi.lofter.com" target="_blank" title="程序猿也玩摄影">程序猿也玩摄影</a>
+            
+          </li>
+        
+    </ul>
+</div>
+
+</aside>
+</div>
+    </div>
+    <footer><div id="footer" >
+	
+	
+	<div class="social-font" class="clearfix">
+		
+		
+		<a href="https://github.com/7byte" target="_blank" class="icon-github" title="github"></a>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		<a href="mailto:zzhangzhiqi@gmail.com" target="_blank" class="icon-email" title="Email Me"></a>
+		
+	</div>
+			
+		
+				<div class="cc-license">
+          <a href="http://creativecommons.org/licenses/by-nc-sa/4.0" class="cc-opacity" target="_blank">
+            <img src="/img/cc-by-nc-sa.svg" alt="Creative Commons" />
+          </a>
+        </div>
+    
+
+		<p class="copyright">
+		Powered by <a href="http://hexo.io" target="_blank" title="hexo">hexo</a> and Theme by <a href="https://github.com/wuchong/jacman" target="_blank" title="Jacman">Jacman</a> © 2026 
+		
+		<a href="/about" target="_blank" title="7byte">7byte</a>
+		
+		
+		</p>
+</div>
+</footer>
+    <script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/jquery.qrcode-0.12.0.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');      
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+  // 
+  
+    c.click();
+  
+  $(window).resize(function(){
+    getSize(); 
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else{
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+      
+      $('#toc.toc-aside').css('display', 'none');
+        
+    }
+  });
+});
+</script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  c.click(function(){
+    ta.css('display', 'block').addClass('fadeIn');
+  });
+  o.click(function(){
+    ta.css('display', 'none');
+  });
+  c.click();
+  $(window).scroll(function(){
+    ta.css("top",Math.max(140,320-$(this).scrollTop()));
+  });
+});
+</script>
+
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var $this = $('.share'),
+      url = $this.attr('data-url'),
+      encodedUrl = encodeURIComponent(url),
+      title = $this.attr('data-title'),
+      tsina = $this.attr('data-tsina'),
+      description = $this.attr('description');
+  var html = [
+  '<div class="hoverqrcode clearfix"></div>',
+  '<a class="overlay" id="qrcode"></a>',
+  '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="article-share-facebook" target="_blank" title="Facebook"></a>',
+  '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="article-share-twitter" target="_blank" title="Twitter"></a>',
+  '<a href="#qrcode" class="article-share-qrcode" title="微信"></a>',
+  '<a href="http://widget.renren.com/dialog/share?resourceUrl=' + encodedUrl + '&srcUrl=' + encodedUrl + '&title=' + title +'" class="article-share-renren" target="_blank" title="人人"></a>',
+  '<a href="http://service.weibo.com/share/share.php?title='+title+'&url='+encodedUrl +'&ralateUid='+ tsina +'&searchPic=true&style=number' +'" class="article-share-weibo" target="_blank" title="微博"></a>',
+  '<span title="Share to"></span>'
+  ].join('');
+  $this.append(html);
+
+  $('.hoverqrcode').hide();
+
+  var myWidth = 0;
+  function updatehoverqrcode(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+    var qrsize = myWidth > 1024 ? 200:100;
+    var options = {render: 'image', size: qrsize, fill: '#2ca6cb', text: url, radius: 0.5, quiet: 1};
+    var p = $('.article-share-qrcode').position();
+    $('.hoverqrcode').empty().css('width', qrsize).css('height', qrsize)
+                          .css('left', p.left-qrsize/2+20).css('top', p.top-qrsize-10)
+                          .qrcode(options);
+  };
+  $(window).resize(function(){
+    $('.hoverqrcode').hide();
+  });
+  $('.article-share-qrcode').click(function(){
+    updatehoverqrcode();
+    $('.hoverqrcode').toggle();
+  });
+  $('.article-share-qrcode').hover(function(){}, function(){
+      $('.hoverqrcode').hide();
+  });
+});   
+</script>
+
+
+
+
+<script type="text/javascript">
+
+var disqus_shortname = '7bytegithubio';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.article-content').each(function(i){
+    $(this).find('img').each(function(){
+      if ($(this).parent().hasClass('fancybox')) return;
+      var alt = this.alt;
+      if (alt) $(this).after('<span class="caption">' + alt + '</span>');
+      $(this).wrap('<a href="' + this.src + '" title="' + alt + '" class="fancybox"></a>');
+    });
+    $(this).find('.fancybox').each(function(){
+      $(this).attr('rel', 'article' + i);
+    });
+  });
+  if($.fancybox){
+    $('.fancybox').fancybox();
+  }
+}); 
+</script>
+
+
+
+<!-- Analytics Begin -->
+
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-87803879-1', '7byte.github.io');  
+ga('send', 'pageview');
+</script>
+
+
+
+
+
+<!-- Analytics End -->
+
+<!-- Totop Begin -->
+
+	<div id="totop">
+	<a title="返回顶部"><img src="/img/scrollup.png"/></a>
+	</div>
+	<script src="/js/totop.js"></script>
+
+<!-- Totop End -->
+
+<!-- MathJax Begin -->
+<!-- mathjax config similar to math.stackexchange -->
+
+
+<!-- MathJax End -->
+
+<!-- Tiny_search Begin -->
+
+<!-- Tiny_search End -->
+
+  </body>
+</html>

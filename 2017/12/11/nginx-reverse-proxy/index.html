@@ -1,0 +1,588 @@
+
+ <!DOCTYPE HTML>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  
+    <title>nginx反向代理 | 7byte</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
+    
+    <meta name="author" content="7byte">
+    
+
+    
+    <meta name="description" content="英文原文：https:&#x2F;&#x2F;www.nginx.com&#x2F;resources&#x2F;admin-guide&#x2F;reverse-proxy&#x2F;  本文描述了代理服务器的基本配置。你将学会怎样使用各种协议把一个请求从NGINX转发到代理服务器、怎样修改发送给代理服务器的客户端请求头，以及怎样为来自代理服务器的请求响应配置缓存。 目录 介绍 转发请求到代理服务器 转发请求头 配置缓存 选择输出IP  介绍代理通常用">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nginx反向代理">
+<meta property="og:url" content="https://7byte.github.io/2017/12/11/nginx-reverse-proxy/index.html">
+<meta property="og:site_name" content="7byte">
+<meta property="og:description" content="英文原文：https:&#x2F;&#x2F;www.nginx.com&#x2F;resources&#x2F;admin-guide&#x2F;reverse-proxy&#x2F;  本文描述了代理服务器的基本配置。你将学会怎样使用各种协议把一个请求从NGINX转发到代理服务器、怎样修改发送给代理服务器的客户端请求头，以及怎样为来自代理服务器的请求响应配置缓存。 目录 介绍 转发请求到代理服务器 转发请求头 配置缓存 选择输出IP  介绍代理通常用">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-12-11T03:16:27.000Z">
+<meta property="article:modified_time" content="2019-07-15T09:43:41.669Z">
+<meta property="article:author" content="7byte">
+<meta property="article:tag" content="nginx">
+<meta property="article:tag" content="反向代理">
+<meta name="twitter:card" content="summary">
+
+    
+    <link rel="alternative" href="/atom.xml" title="7byte" type="application/atom+xml">
+    
+    
+    <link rel="icon" href="/img/favicon.ico">
+    
+    
+    <link rel="apple-touch-icon" href="/img/jacman.jpg">
+    <link rel="apple-touch-icon-precomposed" href="/img/jacman.jpg">
+    
+    
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 8.0.0"></head>
+
+  <body>
+    <header>
+      
+<div>
+		
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="7byte">7byte</a></h1>
+				<h2 class="blog-motto">骐骥一跃，不能十步；驽马十驾，功在不舍</h2>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜单">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					<ul>
+					 
+						<li><a href="/">主页</a></li>
+					
+						<li><a href="/archives">存档</a></li>
+					
+						<li><a href="/categories">分类</a></li>
+					
+						<li><a href="/tags">标签</a></li>
+					
+						<li><a href="/about">About</a></li>
+					
+					<li>
+ 					
+					<form class="search" action="/search/index.html" method="get" accept-charset="utf-8">
+						<label>Search</label>
+						<input type="search" id="search" autocomplete="off" name="q" maxlength="20" placeholder="搜索" />
+					</form>
+					
+					</li>
+				</ul>
+			</nav>			
+</div>
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+  
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2017/12/11/nginx-reverse-proxy/" title="nginx反向代理" itemprop="url">nginx反向代理</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="/about" title="7byte" target="_blank" itemprop="author">7byte</a>
+		
+  <p class="article-time">
+    <time datetime="2017-12-11T03:16:27.000Z" itemprop="datePublished"> 发表于 2017-12-11</time>
+    
+  </p>
+</header>
+	<div class="article-content">
+		
+		<blockquote>
+<p>英文原文：<a target="_blank" rel="noopener" href="https://www.nginx.com/resources/admin-guide/reverse-proxy/">https://www.nginx.com/resources/admin-guide/reverse-proxy/</a></p>
+</blockquote>
+<p>本文描述了代理服务器的基本配置。你将学会怎样使用各种协议把一个请求从NGINX转发到代理服务器、怎样修改发送给代理服务器的客户端请求头，以及怎样为来自代理服务器的请求响应配置缓存。</p>
+<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ul>
+<li>介绍</li>
+<li>转发请求到代理服务器</li>
+<li>转发请求头</li>
+<li>配置缓存</li>
+<li>选择输出IP</li>
+</ul>
+<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>代理通常用来把负载分发到若干服务器，由不同的网站无缝地提供内容，或者经由非HTTP的其它协议转发请求到应用服务器做处理。</p>
+<h2 id="转发请求到代理服务器"><a href="#转发请求到代理服务器" class="headerlink" title="转发请求到代理服务器"></a>转发请求到代理服务器</h2><p>当NGINX代理请求时，NGINX把请求发送给指定的代理服务器——获取到请求结果——把结果返回给客户端。请求可能被发送给HTTP服务器（另一个NGINX服务或者其它HTTP服务器），也可能通过特定的协议发送给非HTTP服务（运行基于特定框架开发的应用服务，例如PHP、Python）。支持的协议包括<a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_fastcgi_module.html">FastCGI</a>、<a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_uwsgi_module.html">uwsgi</a>、<a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_scgi_module.html">SCGI</a>和<a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_memcached_module.html">memcached</a>。</p>
+<p>为了把一个请求转发到HTTP代理服务器，将<a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass">proxy_pass</a>指令添加到<a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_core_module.html#location">location</a>里面。例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">location /some/path/ &#123;</span><br><span class="line">    proxy_pass http://www.example.com/link/;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个配置示例会使所有由该location处理的请求转发到指定地址的代理服务器。这里的地址可以指定为一个域名或是一个IP，地址也可以带上端口：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">location ~ \.php &#123;</span><br><span class="line">    proxy_pass http://127.0.0.1:8000;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意到在第一个示例中，代理服务器的地址后面是一个URI：<strong>&#x2F;link&#x2F;</strong>。如果地址中指定了该URI，那么它会替换掉原始请求URI中与location参数匹配的部分。例如，这里的原始请求URI包含**&#x2F;some&#x2F;path&#x2F;page.html**，转发的请求会替换成<strong><a target="_blank" rel="noopener" href="http://www.example.com/link/page.html">http://www.example.com/link/page.html</a></strong>。如果地址中没有指明URI，或者无法判断需要替换请求URI的哪部分，则会转发完整的请求（可能被修改过）。</p>
+<p>为了把一个请求转发到非HTTP代理服务器，必须使用适当的****_pass**指令：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_fastcgi_module.html#fastcgi_pass">fastcgi_pass</a> 转发请求到FastCGI服务器</li>
+<li><a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_uwsgi_module.html#uwsgi_pass">uwsgi_pass</a> 转发请求到uwsgi服务器</li>
+<li><a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_scgi_module.html#scgi_pass">scgi_pass</a> 转发请求到SCGI服务器</li>
+<li><a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_memcached_module.html#memcached_pass">memcached_pass</a> 转发请求到memcached服务器</li>
+</ul>
+<p>请注意，在这些情况下，指定地址的规则可能会有所不同。你可能还需要将附加参数传递到服务器（请参见<a target="_blank" rel="noopener" href="http://nginx.org/en/docs">参考文档</a>的更多细节）。<br><a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass">proxy_pass</a>指令也可以指向一组<a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/load_balancing.html#algorithms">命名服务器</a>。在这种情况下，请求按照<a target="_blank" rel="noopener" href="https://www.nginx.com/resources/admin-guide/load-balancer/">指定的方式</a>被分发到组中的服务器。</p>
+<h2 id="转发请求头"><a href="#转发请求头" class="headerlink" title="转发请求头"></a>转发请求头</h2><p>NGINX默认会重新定义代理请求中的两个header字段：Host和Connection，并且去除值为空字符串的字段。Host设置为**$proxy_host<strong>变量，Connection设置为</strong>close**。</p>
+<p>如果要修改这些设置，或者修改其它header字段，就需要用到<a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_set_header">proxy_set_header</a>指令。这条指令可以放在<a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_core_module.html#location">location</a>或更高一级的位置，此外也可以放在特定的<a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_core_module.html#server">server</a>上下文或者<a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_core_module.html#http">http</a>块中，例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">location /some/path/ &#123;</span><br><span class="line">    proxy_set_header Host $host;</span><br><span class="line">    proxy_set_header X-Real-IP $remote_addr;</span><br><span class="line">    proxy_pass http://localhost:8000;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在这个配置中，Host字段被设置成<a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_core_module.html#variables">$host</a>变量。</p>
+<p>为了防止一个header字段被传递给代理服务器，可以将其设置为空字符串：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">location /some/path/ &#123;</span><br><span class="line">    proxy_set_header Accept-Encoding &quot;&quot;;</span><br><span class="line">    proxy_pass http://localhost:8000;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="配置缓存"><a href="#配置缓存" class="headerlink" title="配置缓存"></a>配置缓存</h2><p>在默认情况下，NGINX会缓存来自代理服务器的响应。响应会存储在内部缓冲区中，直到接收到完整的数据才将响应内容发送给客户端，这样就有助于优化与慢客户端之间的交互体验，反之，如果响应以同步的方式从NGINX服务器发送给客户端，将会对代理服务器造成浪费。当启用缓存，NGINX允许代理服务器迅速地处理响应（而无须等待客户端接收），与此同时NGINX存储响应数据以保证客户端有充足的时间下载。</p>
+<p>负责启用和禁用缓存的指令是<a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering">proxy_buffering</a>。默认情况下它被设置为<strong>on</strong>：启用缓存。</p>
+<p><a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffers">proxy_buffers</a>指令控制分配给一个请求的缓冲区大小和数量。来自代理服务器的第一份响应数据被存储在单独的缓冲区，这块缓冲区的大小由<a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffer_size">proxy_buffer_size</a>指令指定。该缓冲区通常包含相对较小的响应header以及剩余可以可以被塞进缓冲区的响应数据。</p>
+<p>在下面的例子中，缓冲区的默认数量被加大了，并且第一份响应数据的缓冲区大小小于默认的缓冲区大小。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">location /some/path/ &#123;</span><br><span class="line">    proxy_buffers 16 4k;</span><br><span class="line">    proxy_buffer_size 2k;</span><br><span class="line">    proxy_pass http://localhost:8000;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果缓存被禁用，NGINX一旦接收到来自代理服务器的响应将会同步地发送给客户端。对要求尽可能实时的快速交互式客户端来说这种方式是可取的。</p>
+<p>如果要禁用特定location中的缓存，则将location中的<a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering">proxy_buffering</a>设置为<strong>off</strong>，例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">location /some/path/ &#123;</span><br><span class="line">    proxy_buffering off;</span><br><span class="line">    proxy_pass http://localhost:8000;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在这种情况下，NGINX仅使用由<a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffer_size">proxy_buffer_size</a>配置的缓存区来存储当前响应数据。</p>
+<p>反向代理的一个常见用途是提供负载平衡。阅读电子书<a target="_blank" rel="noopener" href="https://www.nginx.com/resources/library/five-reasons-choose-software-load-balancer/"> Five Reasons to Choose a Software Load Balancer</a>，了解如何提高性能、专注快速部署你的应用。</p>
+<h2 id="选择输出IP"><a href="#选择输出IP" class="headerlink" title="选择输出IP"></a>选择输出IP</h2><p>如果你的代理服务器有多个网络接口，有时候你可能需要选择一个特定的源IP用于连接到代理服务器或上游服务器（upstream）。当NGINX后端的代理服务器配置为接受来自特定IP网络或IP地址范围的连接时，这样是设置是很有用处的。</p>
+<p>指定<a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_bind">proxy_bind</a>指令和必要的网络接口的IP地址：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">location /app1/ &#123;</span><br><span class="line">    proxy_bind 127.0.0.1;</span><br><span class="line">    proxy_pass http://example.com/app1/;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">location /app2/ &#123;</span><br><span class="line">    proxy_bind 127.0.0.2;</span><br><span class="line">    proxy_pass http://example.com/app2/;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>也可以用一个变量来指定IP地址。例如，<a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_core_module.html#var_server_addr">$var_server_addr</a>变量表示接收客户端请求的网络接口的IP地址：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">location /app3/ &#123;</span><br><span class="line">    proxy_bind $server_addr;</span><br><span class="line">    proxy_pass http://example.com/app3/;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+  
+	</div>
+		<footer class="article-footer clearfix">
+<div class="article-catetags">
+
+<div class="article-categories">
+  <span></span>
+  <a class="article-category-link" href="/categories/openresty/">openresty</a>
+</div>
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/nginx/">nginx</a><a href="/tags/反向代理/">反向代理</a>
+  </div>
+
+</div>
+
+
+
+	<div class="article-share" id="share">
+	
+	  <div data-url="https://7byte.github.io/2017/12/11/nginx-reverse-proxy/" data-title="nginx反向代理 | 7byte" data-tsina="" class="share clearfix">
+	  </div>
+	
+	</div>
+
+
+</footer>
+
+   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+ <div class="prev" >
+ <a href="/2018/01/05/distanceoftwocity/" title="根据经纬度计算两个城市间的距离">
+  <strong>上一篇：</strong><br/>
+  <span>
+  根据经纬度计算两个城市间的距离</span>
+</a>
+</div>
+
+
+<div class="next">
+<a href="/2017/01/17/trytouse-gzip/"  title="nginx gzip">
+ <strong>下一篇：</strong><br/> 
+ <span>nginx gzip
+</span>
+</a>
+</div>
+
+</nav>
+
+	
+
+<section id="comments" class="comment">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a target="_blank" rel="noopener" href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="显示侧边栏"></a></div>
+
+  <div id="toc" class="toc-aside">
+  <strong class="toc-title">文章目录</strong>
+ 
+ <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%AE%E5%BD%95"><span class="toc-number">1.</span> <span class="toc-text">目录</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%8B%E7%BB%8D"><span class="toc-number">2.</span> <span class="toc-text">介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BD%AC%E5%8F%91%E8%AF%B7%E6%B1%82%E5%88%B0%E4%BB%A3%E7%90%86%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="toc-number">3.</span> <span class="toc-text">转发请求到代理服务器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BD%AC%E5%8F%91%E8%AF%B7%E6%B1%82%E5%A4%B4"><span class="toc-number">4.</span> <span class="toc-text">转发请求头</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E7%BC%93%E5%AD%98"><span class="toc-number">5.</span> <span class="toc-text">配置缓存</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%89%E6%8B%A9%E8%BE%93%E5%87%BAIP"><span class="toc-number">6.</span> <span class="toc-text">选择输出IP</span></a></li></ol>
+ 
+  </div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="隐藏侧边栏"></a></div>
+<aside class="clearfix">
+
+  
+<div class="categorieslist">
+	<p class="asidetitle">分类</p>
+		<ul>
+		
+		  
+			<li><a href="/categories/golang/" title="golang">golang<sup>3</sup></a></li>
+		  
+		
+		  
+			<li><a href="/categories/openresty/" title="openresty">openresty<sup>5</sup></a></li>
+		  
+		
+		  
+			<li><a href="/categories/性能测试/" title="性能测试">性能测试<sup>1</sup></a></li>
+		  
+		
+		  
+			<li><a href="/categories/myBlog/" title="搭建个人博客">搭建个人博客<sup>1</sup></a></li>
+		  
+		
+		  
+			<li><a href="/categories/算法/" title="算法">算法<sup>3</sup></a></li>
+		  
+		
+		</ul>
+</div>
+
+
+  
+<div class="tagslist">
+	<p class="asidetitle">标签</p>
+		<ul class="clearfix">
+		
+			
+				<li><a href="/tags/nginx/" title="nginx">nginx<sup>5</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/openresty/" title="openresty">openresty<sup>4</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/golang/" title="golang">golang<sup>3</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/性能测试/" title="性能测试">性能测试<sup>2</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/树/" title="树">树<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/搜索/" title="搜索">搜索<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/反向代理/" title="反向代理">反向代理<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/动态追踪/" title="动态追踪">动态追踪<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/github/" title="github">github<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/hexo/" title="hexo">hexo<sup>1</sup></a></li>
+			
+		
+		</ul>
+</div>
+
+
+  <div class="linkslist">
+  <p class="asidetitle">友情链接</p>
+    <ul>
+        
+          <li>
+            
+            	<a href="https://github.com/7byte" target="_blank" title="GitHub of 7byte">GitHub of 7byte</a>
+            
+          </li>
+        
+          <li>
+            
+            	<a href="http://zzhangzhiqi.lofter.com" target="_blank" title="程序猿也玩摄影">程序猿也玩摄影</a>
+            
+          </li>
+        
+    </ul>
+</div>
+
+</aside>
+</div>
+    </div>
+    <footer><div id="footer" >
+	
+	
+	<div class="social-font" class="clearfix">
+		
+		
+		<a href="https://github.com/7byte" target="_blank" class="icon-github" title="github"></a>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		<a href="mailto:zzhangzhiqi@gmail.com" target="_blank" class="icon-email" title="Email Me"></a>
+		
+	</div>
+			
+		
+				<div class="cc-license">
+          <a href="http://creativecommons.org/licenses/by-nc-sa/4.0" class="cc-opacity" target="_blank">
+            <img src="/img/cc-by-nc-sa.svg" alt="Creative Commons" />
+          </a>
+        </div>
+    
+
+		<p class="copyright">
+		Powered by <a href="http://hexo.io" target="_blank" title="hexo">hexo</a> and Theme by <a href="https://github.com/wuchong/jacman" target="_blank" title="Jacman">Jacman</a> © 2026 
+		
+		<a href="/about" target="_blank" title="7byte">7byte</a>
+		
+		
+		</p>
+</div>
+</footer>
+    <script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/jquery.qrcode-0.12.0.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');      
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+  // 
+  
+    c.click();
+  
+  $(window).resize(function(){
+    getSize(); 
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else{
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+      
+      $('#toc.toc-aside').css('display', 'none');
+        
+    }
+  });
+});
+</script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  c.click(function(){
+    ta.css('display', 'block').addClass('fadeIn');
+  });
+  o.click(function(){
+    ta.css('display', 'none');
+  });
+  c.click();
+  $(window).scroll(function(){
+    ta.css("top",Math.max(140,320-$(this).scrollTop()));
+  });
+});
+</script>
+
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var $this = $('.share'),
+      url = $this.attr('data-url'),
+      encodedUrl = encodeURIComponent(url),
+      title = $this.attr('data-title'),
+      tsina = $this.attr('data-tsina'),
+      description = $this.attr('description');
+  var html = [
+  '<div class="hoverqrcode clearfix"></div>',
+  '<a class="overlay" id="qrcode"></a>',
+  '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="article-share-facebook" target="_blank" title="Facebook"></a>',
+  '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="article-share-twitter" target="_blank" title="Twitter"></a>',
+  '<a href="#qrcode" class="article-share-qrcode" title="微信"></a>',
+  '<a href="http://widget.renren.com/dialog/share?resourceUrl=' + encodedUrl + '&srcUrl=' + encodedUrl + '&title=' + title +'" class="article-share-renren" target="_blank" title="人人"></a>',
+  '<a href="http://service.weibo.com/share/share.php?title='+title+'&url='+encodedUrl +'&ralateUid='+ tsina +'&searchPic=true&style=number' +'" class="article-share-weibo" target="_blank" title="微博"></a>',
+  '<span title="Share to"></span>'
+  ].join('');
+  $this.append(html);
+
+  $('.hoverqrcode').hide();
+
+  var myWidth = 0;
+  function updatehoverqrcode(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+    var qrsize = myWidth > 1024 ? 200:100;
+    var options = {render: 'image', size: qrsize, fill: '#2ca6cb', text: url, radius: 0.5, quiet: 1};
+    var p = $('.article-share-qrcode').position();
+    $('.hoverqrcode').empty().css('width', qrsize).css('height', qrsize)
+                          .css('left', p.left-qrsize/2+20).css('top', p.top-qrsize-10)
+                          .qrcode(options);
+  };
+  $(window).resize(function(){
+    $('.hoverqrcode').hide();
+  });
+  $('.article-share-qrcode').click(function(){
+    updatehoverqrcode();
+    $('.hoverqrcode').toggle();
+  });
+  $('.article-share-qrcode').hover(function(){}, function(){
+      $('.hoverqrcode').hide();
+  });
+});   
+</script>
+
+
+
+
+<script type="text/javascript">
+
+var disqus_shortname = '7bytegithubio';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.article-content').each(function(i){
+    $(this).find('img').each(function(){
+      if ($(this).parent().hasClass('fancybox')) return;
+      var alt = this.alt;
+      if (alt) $(this).after('<span class="caption">' + alt + '</span>');
+      $(this).wrap('<a href="' + this.src + '" title="' + alt + '" class="fancybox"></a>');
+    });
+    $(this).find('.fancybox').each(function(){
+      $(this).attr('rel', 'article' + i);
+    });
+  });
+  if($.fancybox){
+    $('.fancybox').fancybox();
+  }
+}); 
+</script>
+
+
+
+<!-- Analytics Begin -->
+
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-87803879-1', '7byte.github.io');  
+ga('send', 'pageview');
+</script>
+
+
+
+
+
+<!-- Analytics End -->
+
+<!-- Totop Begin -->
+
+	<div id="totop">
+	<a title="返回顶部"><img src="/img/scrollup.png"/></a>
+	</div>
+	<script src="/js/totop.js"></script>
+
+<!-- Totop End -->
+
+<!-- MathJax Begin -->
+<!-- mathjax config similar to math.stackexchange -->
+
+
+<!-- MathJax End -->
+
+<!-- Tiny_search Begin -->
+
+<!-- Tiny_search End -->
+
+  </body>
+</html>

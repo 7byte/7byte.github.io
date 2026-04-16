@@ -1,0 +1,613 @@
+
+ <!DOCTYPE HTML>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  
+    <title>golang环境搭建 | 7byte</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
+    
+    <meta name="author" content="7byte">
+    
+
+    
+    <meta name="description" content="最近由于工作上的原因开始接触golang，虽然早前就已听说golang的大名，但是也仅仅只有一个大概的印象，比如其对C语言系程序员来说别扭的声明、集其它程序语言优秀设计于一身的大杂烩式语法、天生的并发机制、谷歌亲爹的强大背景。毫无疑问这是一门实用至上的语言，非常值得学习。本文记录Linux和Windows下golang环境的搭建过程，以便将来查阅。内容参照官方安装说明文档（安装golang），以及">
+<meta property="og:type" content="article">
+<meta property="og:title" content="golang环境搭建">
+<meta property="og:url" content="https://7byte.github.io/2017/01/14/trytouse-golang/index.html">
+<meta property="og:site_name" content="7byte">
+<meta property="og:description" content="最近由于工作上的原因开始接触golang，虽然早前就已听说golang的大名，但是也仅仅只有一个大概的印象，比如其对C语言系程序员来说别扭的声明、集其它程序语言优秀设计于一身的大杂烩式语法、天生的并发机制、谷歌亲爹的强大背景。毫无疑问这是一门实用至上的语言，非常值得学习。本文记录Linux和Windows下golang环境的搭建过程，以便将来查阅。内容参照官方安装说明文档（安装golang），以及">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-01-14T06:33:04.000Z">
+<meta property="article:modified_time" content="2019-07-15T09:43:41.670Z">
+<meta property="article:author" content="7byte">
+<meta property="article:tag" content="golang">
+<meta name="twitter:card" content="summary">
+
+    
+    <link rel="alternative" href="/atom.xml" title="7byte" type="application/atom+xml">
+    
+    
+    <link rel="icon" href="/img/favicon.ico">
+    
+    
+    <link rel="apple-touch-icon" href="/img/jacman.jpg">
+    <link rel="apple-touch-icon-precomposed" href="/img/jacman.jpg">
+    
+    
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 8.0.0"></head>
+
+  <body>
+    <header>
+      
+<div>
+		
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="7byte">7byte</a></h1>
+				<h2 class="blog-motto">骐骥一跃，不能十步；驽马十驾，功在不舍</h2>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜单">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					<ul>
+					 
+						<li><a href="/">主页</a></li>
+					
+						<li><a href="/archives">存档</a></li>
+					
+						<li><a href="/categories">分类</a></li>
+					
+						<li><a href="/tags">标签</a></li>
+					
+						<li><a href="/about">About</a></li>
+					
+					<li>
+ 					
+					<form class="search" action="/search/index.html" method="get" accept-charset="utf-8">
+						<label>Search</label>
+						<input type="search" id="search" autocomplete="off" name="q" maxlength="20" placeholder="搜索" />
+					</form>
+					
+					</li>
+				</ul>
+			</nav>			
+</div>
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+  
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2017/01/14/trytouse-golang/" title="golang环境搭建" itemprop="url">golang环境搭建</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="/about" title="7byte" target="_blank" itemprop="author">7byte</a>
+		
+  <p class="article-time">
+    <time datetime="2017-01-14T06:33:04.000Z" itemprop="datePublished"> 发表于 2017-01-14</time>
+    
+  </p>
+</header>
+	<div class="article-content">
+		
+		<p>最近由于工作上的原因开始接触golang，虽然早前就已听说golang的大名，但是也仅仅只有一个大概的印象，比如其对C语言系程序员来说别扭的声明、集其它程序语言优秀设计于一身的大杂烩式语法、天生的并发机制、谷歌亲爹的强大背景。毫无疑问这是一门实用至上的语言，非常值得学习。<br>本文记录Linux和Windows下golang环境的搭建过程，以便将来查阅。内容参照官方安装说明文档（<a target="_blank" rel="noopener" href="https://golang.org/doc/install">安装golang</a>），以及安装包下载页面（<a target="_blank" rel="noopener" href="https://golang.org/dl/">下载安装包</a>）。<br>本人目前还买不起Mac，故无法验证Mac上安装流程的可行性，等将来剁手了再来补充相关内容。</p>
+<p><em><strong>温馨提示：部分步骤可能需要科学上网。</strong></em></p>
+<h2 id="Linux环境"><a href="#Linux环境" class="headerlink" title="Linux环境"></a>Linux环境</h2><ol>
+<li>下载压缩包，例如当前最新的版本是1.7.3：</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ wget https://storage.googleapis.com/golang/go1.7.3.linux-amd64.tar.gz</span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>提取压缩包内容到 &#x2F;usr&#x2F;local 目录：</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ sudo tar -C /usr/local -xzf go1.7.3.linux-amd64.tar.gz</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>将 &#x2F;usr&#x2F;local&#x2F;go&#x2F;bin 添加到PATH环境变量，将此行添加到你的 &#x2F;etc&#x2F;profile（全系统安装）或 $HOME&#x2F;.bash_profile 文件中：</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">export PATH=$PATH:/usr/local/go/bin</span><br></pre></td></tr></table></figure>
+<p>   然后让新添加的配置生效：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ source /etc/profile</span><br></pre></td></tr></table></figure>
+<ol start="4">
+<li>添加自己的工作目录，将此行添加到 $HOME&#x2F;.bash_profile 文件中：</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">GOPATH=/home/7byte/code/gowork</span><br><span class="line">GOBIN=$GOPATH/bin</span><br><span class="line">PATH=$PATH:$GOBIN</span><br><span class="line"></span><br><span class="line">export GOPATH</span><br><span class="line">export GOBIN</span><br><span class="line">export PATH</span><br></pre></td></tr></table></figure>
+<p>   同样的让新添加的配置生效，gowork目录如果不存在则创建：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ mkdir $HOME/gowork</span><br><span class="line">$ source $HOME/.bash_profile</span><br></pre></td></tr></table></figure>
+<ol start="5">
+<li>验证安装。使用<code>go env</code>命令查看golang环境：</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">$ go env</span><br><span class="line">GOARCH=&quot;amd64&quot;</span><br><span class="line">GOBIN=&quot;/home/7byte/code/gowork/bin&quot;</span><br><span class="line">GOEXE=&quot;&quot;</span><br><span class="line">GOHOSTARCH=&quot;amd64&quot;</span><br><span class="line">GOHOSTOS=&quot;linux&quot;</span><br><span class="line">GOOS=&quot;linux&quot;</span><br><span class="line">GOPATH=&quot;/home/7byte/code/gowork&quot;</span><br><span class="line">GORACE=&quot;&quot;</span><br><span class="line">GOROOT=&quot;/usr/lib/golang&quot;</span><br><span class="line">GOTOOLDIR=&quot;/usr/lib/golang/pkg/tool/linux_amd64&quot;</span><br><span class="line">GO15VENDOREXPERIMENT=&quot;1&quot;</span><br><span class="line">CC=&quot;gcc&quot;</span><br><span class="line">GOGCCFLAGS=&quot;-fPIC -m64 -pthread -fmessage-length=0&quot;</span><br><span class="line">CXX=&quot;g++&quot;</span><br><span class="line">CGO_ENABLED=&quot;1&quot;</span><br></pre></td></tr></table></figure>
+<p>  在 $GOPATH&#x2F;src&#x2F; 创建 hello 目录，新建 helloworld.go 文件并输入以下代码：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> <span class="string">&quot;fmt&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    fmt.Printf(<span class="string">&quot;hello, world\n&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>  运行我们的hello程序，如果得到以下输出说明配置成功。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ go run helloworld.go </span><br><span class="line">hello, world</span><br></pre></td></tr></table></figure>
+
+<h2 id="Windows环境"><a href="#Windows环境" class="headerlink" title="Windows环境"></a>Windows环境</h2><p>Windows环境下golang环境搭建和Linux类似，官网上提供了msi安装包，安装过程和普通PC软件安装一致，基本只要“下一步”就可以了。安装程序会设置默认的<code>%GOROOT%\bin</code>（c:\Go\bin）目录到<code>Path</code>环境变量，如果自定义安装目录，需要手动修改<code>GOROOT</code>和<code>Path</code>环境变量。<br>同样的，我们需要添加自己的工作目录。在环境变量中添加<code>GOPATH</code>，变量值即工作目录，例如<code>E:\code\gowork</code>。<br>设置GOBIN环境变量<code>%GOPATH%\bin</code>，并添加到Path环境变量<br>验证安装的方式与Linux中相同，参考上一小节第5条。</p>
+<h2 id="安装git"><a href="#安装git" class="headerlink" title="安装git"></a>安装git</h2><p>必须安装git客户端，否则 go get 将无法正常执行。git的安装过程作为程序员的基本技能不在此详细记录。</p>
+<h2 id="安装golint和goimports"><a href="#安装golint和goimports" class="headerlink" title="安装golint和goimports"></a>安装golint和goimports</h2><p>什么是<a target="_blank" rel="noopener" href="https://github.com/golang/lint">golint</a>：</p>
+<blockquote>
+<p>Golint is a linter for Go source code. </p>
+</blockquote>
+<p>wiki对<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/Lint">lint</a>的解释：</p>
+<blockquote>
+<p>在计算机科学中，lint是一种工具程序的名称，它用来标记源代码中，某些可疑的、不具结构性（可能造成bug）的段落。它是一种静态程序分析工具，最早适用于C语言，在UNIX平台上开发出来。后来它成为通用术语，可用于描述在任何一种计算机程序语言中，用来标记源代码中有疑义段落的工具。</p>
+</blockquote>
+<p>安装golint：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go get -u github.com/golang/lint/golint</span><br></pre></td></tr></table></figure>
+<p>安装完成后会在GOPATH\bin目录下生成一个名为<code>golint</code>的执行文件。golint支持对Go源文件、目录或包做静态分析，例如要检查当前目录下的所有Go源文件：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">golint ./...</span><br></pre></td></tr></table></figure>
+
+<p>什么是<a target="_blank" rel="noopener" href="https://godoc.org/golang.org/x/tools/cmd/goimports">goimports</a>：</p>
+<blockquote>
+<p>Command goimports updates your Go import lines, adding missing ones and removing unreferenced ones.</p>
+</blockquote>
+<p>安装goimports</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go get golang.org/x/tools/cmd/goimports</span><br></pre></td></tr></table></figure>
+<p>后文对golint和goimports这两个工具在编辑器中的配置将做进一步说明。</p>
+<h2 id="测试工具GoConvey"><a href="#测试工具GoConvey" class="headerlink" title="测试工具GoConvey"></a>测试工具GoConvey</h2><p>完善的测试用例对提高代码质量的帮助不言而喻，在github上随手翻几个golang开源项目，可以发现每一个项目都带有详细的测试用例，可见为自己的golang代码写测试case已经是一项约定俗成的圈内规范。Go语言中自带有一个轻量级的测试框架testing和自带的go test命令来实现单元测试。但是go test的结果不够直观，并且每次都要手动敲命令也比较麻烦，所以我用到了<a target="_blank" rel="noopener" href="http://goconvey.co/">GoConvey</a>这个开源测试工具。<br>GoConvey使用起来非常简单：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ go get github.com/smartystreets/goconvey</span><br><span class="line">$ $GOPATH/bin/goconvey</span><br></pre></td></tr></table></figure>
+<p>然后在浏览器打开<a target="_blank" rel="noopener" href="http://127.0.0.1:8080/">http://127.0.0.1:8080/</a> ，就能看到当前工程目录下所有*_test.go的测试情况了。<br>添加一个测试文件helloworld_test.go</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">    <span class="string">&quot;testing&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestHello</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">    fmt.Println(<span class="string">&quot;test OK!&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>保存之后可以看到浏览器页面几秒后自动刷新，测试通过效果图：</p>
+<div align=center>
+![](/images/20161207214519.png)
+</div>
+
+<p>修改TestHello的代码：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestHello</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">    fmt.Println(<span class="string">&quot;test OK?&quot;</span>)</span><br><span class="line">    t.Error(<span class="string">&quot;test not OK!&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>再次刷新后测试不通过：</p>
+<div align=center>
+![](/images/20161207220023.png)
+</div>
+
+<h2 id="配置Sublime-Text"><a href="#配置Sublime-Text" class="headerlink" title="配置Sublime Text"></a>配置Sublime Text</h2><p><a target="_blank" rel="noopener" href="https://www.sublimetext.com/">Sublime Text</a>是一款非常好用的编辑器，自带很多强大的文本编辑功能，并且有丰富的插件扩展，完全可以胜任golang日常实际开发。</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/DisposaBoy/GoSublime">GoSublime</a>插件提供了很多类golang IDE的功能，例如自动代码补全等等，能够很好地提高开发效率。</p>
+<p>Sublime的插件一般都是基于Python开发，所以测试机上Python环境是必不可少的。Linux系统默认自带Python，但如果是Windows则需要自己安装。与git安装相同，Python安装过程不在此详细记录。</p>
+<p>Python环境搭建完成，然后我们首先需要安装Sublime插件管理器Package Control，借助该工具我们可以非常方便地搜索、安装、更新Sublime上的众多插件。依据官方安装说明的建议，我在这里只贴出原始安装文档页面链接，请到官方页面获取安装代码：<a target="_blank" rel="noopener" href="https://packagecontrol.io/installation">https://packagecontrol.io/installation</a></p>
+<div align=center>
+![](/images/20170113230448.jpg)
+</div>
+
+<p>Package Control安装完成，使用快捷键<code>ctrl+shift+p</code>或者打开菜单栏 Preferences &gt; Package Control 调出Package Control对话框，输入<code>install</code>，在下拉选项中选择<code>Package Control: Install Package</code>，然后输入<code>GoSublime</code>，Package Control将会安装对应插件。<br>接下来是对GoSublime插件的基本设置，打开菜单栏 Preferences &gt; Package Settings &gt; GoSublime &gt; Settiongs-User 修改用户设置：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;env&quot;:&#123;</span><br><span class="line">        &quot;GOPATH&quot;:&quot;E:/code/gowork&quot;</span><br><span class="line">    &#125;,</span><br><span class="line">    &quot;fmt_cmd&quot;: [</span><br><span class="line">      &quot;goimports&quot;</span><br><span class="line">    ],</span><br><span class="line">    &quot;on_save&quot;:[</span><br><span class="line">        &#123;</span><br><span class="line">            &quot;cmd&quot;:&quot;gs9o_open&quot;,</span><br><span class="line">            &quot;args&quot;:&#123;</span><br><span class="line">                &quot;run&quot;:[</span><br><span class="line">                    &quot;sh&quot;,</span><br><span class="line">                    &quot;go vet&quot;</span><br><span class="line">                ],</span><br><span class="line">                &quot;focus_view&quot;:false</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;,</span><br><span class="line">        &#123;</span><br><span class="line">            &quot;cmd&quot;:&quot;gs9o_open&quot;,</span><br><span class="line">            &quot;args&quot;:&#123;</span><br><span class="line">                &quot;run&quot;:[</span><br><span class="line">                    &quot;golint&quot;,</span><br><span class="line">                    &quot;.&quot;</span><br><span class="line">                ],</span><br><span class="line">                &quot;focus_view&quot;:false</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该配置参考了这篇文章：<a target="_blank" rel="noopener" href="https://www.goinggo.net/2016/05/installing-go-and-your-workspace.html">https://www.goinggo.net/2016/05/installing-go-and-your-workspace.html</a></p>
+<p>至此，golang环境搭建基本完成，可以尽情地写代码了！</p>
+  
+	</div>
+		<footer class="article-footer clearfix">
+<div class="article-catetags">
+
+<div class="article-categories">
+  <span></span>
+  <a class="article-category-link" href="/categories/golang/">golang</a>
+</div>
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/golang/">golang</a>
+  </div>
+
+</div>
+
+
+
+	<div class="article-share" id="share">
+	
+	  <div data-url="https://7byte.github.io/2017/01/14/trytouse-golang/" data-title="golang环境搭建 | 7byte" data-tsina="" class="share clearfix">
+	  </div>
+	
+	</div>
+
+
+</footer>
+
+   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+ <div class="prev" >
+ <a href="/2017/01/17/trytouse-gzip/" title="nginx gzip">
+  <strong>上一篇：</strong><br/>
+  <span>
+  nginx gzip</span>
+</a>
+</div>
+
+
+<div class="next">
+<a href="/2017/01/12/trytouse-wrk/"  title="wrk压力测试">
+ <strong>下一篇：</strong><br/> 
+ <span>wrk压力测试
+</span>
+</a>
+</div>
+
+</nav>
+
+	
+
+<section id="comments" class="comment">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a target="_blank" rel="noopener" href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="显示侧边栏"></a></div>
+
+  <div id="toc" class="toc-aside">
+  <strong class="toc-title">文章目录</strong>
+ 
+ <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Linux%E7%8E%AF%E5%A2%83"><span class="toc-number">1.</span> <span class="toc-text">Linux环境</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Windows%E7%8E%AF%E5%A2%83"><span class="toc-number">2.</span> <span class="toc-text">Windows环境</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E8%A3%85git"><span class="toc-number">3.</span> <span class="toc-text">安装git</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E8%A3%85golint%E5%92%8Cgoimports"><span class="toc-number">4.</span> <span class="toc-text">安装golint和goimports</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B5%8B%E8%AF%95%E5%B7%A5%E5%85%B7GoConvey"><span class="toc-number">5.</span> <span class="toc-text">测试工具GoConvey</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E7%BD%AESublime-Text"><span class="toc-number">6.</span> <span class="toc-text">配置Sublime Text</span></a></li></ol>
+ 
+  </div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="隐藏侧边栏"></a></div>
+<aside class="clearfix">
+
+  
+<div class="categorieslist">
+	<p class="asidetitle">分类</p>
+		<ul>
+		
+		  
+			<li><a href="/categories/golang/" title="golang">golang<sup>3</sup></a></li>
+		  
+		
+		  
+			<li><a href="/categories/openresty/" title="openresty">openresty<sup>5</sup></a></li>
+		  
+		
+		  
+			<li><a href="/categories/性能测试/" title="性能测试">性能测试<sup>1</sup></a></li>
+		  
+		
+		  
+			<li><a href="/categories/myBlog/" title="搭建个人博客">搭建个人博客<sup>1</sup></a></li>
+		  
+		
+		  
+			<li><a href="/categories/算法/" title="算法">算法<sup>3</sup></a></li>
+		  
+		
+		</ul>
+</div>
+
+
+  
+<div class="tagslist">
+	<p class="asidetitle">标签</p>
+		<ul class="clearfix">
+		
+			
+				<li><a href="/tags/nginx/" title="nginx">nginx<sup>5</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/openresty/" title="openresty">openresty<sup>4</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/golang/" title="golang">golang<sup>3</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/性能测试/" title="性能测试">性能测试<sup>2</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/树/" title="树">树<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/搜索/" title="搜索">搜索<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/反向代理/" title="反向代理">反向代理<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/动态追踪/" title="动态追踪">动态追踪<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/github/" title="github">github<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/hexo/" title="hexo">hexo<sup>1</sup></a></li>
+			
+		
+		</ul>
+</div>
+
+
+  <div class="linkslist">
+  <p class="asidetitle">友情链接</p>
+    <ul>
+        
+          <li>
+            
+            	<a href="https://github.com/7byte" target="_blank" title="GitHub of 7byte">GitHub of 7byte</a>
+            
+          </li>
+        
+          <li>
+            
+            	<a href="http://zzhangzhiqi.lofter.com" target="_blank" title="程序猿也玩摄影">程序猿也玩摄影</a>
+            
+          </li>
+        
+    </ul>
+</div>
+
+</aside>
+</div>
+    </div>
+    <footer><div id="footer" >
+	
+	
+	<div class="social-font" class="clearfix">
+		
+		
+		<a href="https://github.com/7byte" target="_blank" class="icon-github" title="github"></a>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		<a href="mailto:zzhangzhiqi@gmail.com" target="_blank" class="icon-email" title="Email Me"></a>
+		
+	</div>
+			
+		
+				<div class="cc-license">
+          <a href="http://creativecommons.org/licenses/by-nc-sa/4.0" class="cc-opacity" target="_blank">
+            <img src="/img/cc-by-nc-sa.svg" alt="Creative Commons" />
+          </a>
+        </div>
+    
+
+		<p class="copyright">
+		Powered by <a href="http://hexo.io" target="_blank" title="hexo">hexo</a> and Theme by <a href="https://github.com/wuchong/jacman" target="_blank" title="Jacman">Jacman</a> © 2026 
+		
+		<a href="/about" target="_blank" title="7byte">7byte</a>
+		
+		
+		</p>
+</div>
+</footer>
+    <script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/jquery.qrcode-0.12.0.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');      
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+  // 
+  
+    c.click();
+  
+  $(window).resize(function(){
+    getSize(); 
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else{
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+      
+      $('#toc.toc-aside').css('display', 'none');
+        
+    }
+  });
+});
+</script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  c.click(function(){
+    ta.css('display', 'block').addClass('fadeIn');
+  });
+  o.click(function(){
+    ta.css('display', 'none');
+  });
+  c.click();
+  $(window).scroll(function(){
+    ta.css("top",Math.max(140,320-$(this).scrollTop()));
+  });
+});
+</script>
+
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var $this = $('.share'),
+      url = $this.attr('data-url'),
+      encodedUrl = encodeURIComponent(url),
+      title = $this.attr('data-title'),
+      tsina = $this.attr('data-tsina'),
+      description = $this.attr('description');
+  var html = [
+  '<div class="hoverqrcode clearfix"></div>',
+  '<a class="overlay" id="qrcode"></a>',
+  '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="article-share-facebook" target="_blank" title="Facebook"></a>',
+  '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="article-share-twitter" target="_blank" title="Twitter"></a>',
+  '<a href="#qrcode" class="article-share-qrcode" title="微信"></a>',
+  '<a href="http://widget.renren.com/dialog/share?resourceUrl=' + encodedUrl + '&srcUrl=' + encodedUrl + '&title=' + title +'" class="article-share-renren" target="_blank" title="人人"></a>',
+  '<a href="http://service.weibo.com/share/share.php?title='+title+'&url='+encodedUrl +'&ralateUid='+ tsina +'&searchPic=true&style=number' +'" class="article-share-weibo" target="_blank" title="微博"></a>',
+  '<span title="Share to"></span>'
+  ].join('');
+  $this.append(html);
+
+  $('.hoverqrcode').hide();
+
+  var myWidth = 0;
+  function updatehoverqrcode(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+    var qrsize = myWidth > 1024 ? 200:100;
+    var options = {render: 'image', size: qrsize, fill: '#2ca6cb', text: url, radius: 0.5, quiet: 1};
+    var p = $('.article-share-qrcode').position();
+    $('.hoverqrcode').empty().css('width', qrsize).css('height', qrsize)
+                          .css('left', p.left-qrsize/2+20).css('top', p.top-qrsize-10)
+                          .qrcode(options);
+  };
+  $(window).resize(function(){
+    $('.hoverqrcode').hide();
+  });
+  $('.article-share-qrcode').click(function(){
+    updatehoverqrcode();
+    $('.hoverqrcode').toggle();
+  });
+  $('.article-share-qrcode').hover(function(){}, function(){
+      $('.hoverqrcode').hide();
+  });
+});   
+</script>
+
+
+
+
+<script type="text/javascript">
+
+var disqus_shortname = '7bytegithubio';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.article-content').each(function(i){
+    $(this).find('img').each(function(){
+      if ($(this).parent().hasClass('fancybox')) return;
+      var alt = this.alt;
+      if (alt) $(this).after('<span class="caption">' + alt + '</span>');
+      $(this).wrap('<a href="' + this.src + '" title="' + alt + '" class="fancybox"></a>');
+    });
+    $(this).find('.fancybox').each(function(){
+      $(this).attr('rel', 'article' + i);
+    });
+  });
+  if($.fancybox){
+    $('.fancybox').fancybox();
+  }
+}); 
+</script>
+
+
+
+<!-- Analytics Begin -->
+
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-87803879-1', '7byte.github.io');  
+ga('send', 'pageview');
+</script>
+
+
+
+
+
+<!-- Analytics End -->
+
+<!-- Totop Begin -->
+
+	<div id="totop">
+	<a title="返回顶部"><img src="/img/scrollup.png"/></a>
+	</div>
+	<script src="/js/totop.js"></script>
+
+<!-- Totop End -->
+
+<!-- MathJax Begin -->
+<!-- mathjax config similar to math.stackexchange -->
+
+
+<!-- MathJax End -->
+
+<!-- Tiny_search Begin -->
+
+<!-- Tiny_search End -->
+
+  </body>
+</html>
